@@ -33,6 +33,22 @@ var (
 
 	// SystemMax maximum system error code
 	SystemMax = 100
+
+	/**
+	 * @apiDefine ErrSystemError
+	 * @apiError (Error <100) {Number} ErrSystemError <code>1</code>. System error
+	 */
+
+	// ErrSystemError 1
+	ErrSystemError = New(1, "System Error")
+
+	/**
+	 * @apiDefine ErrInputInvalid
+	 * @apiError (Error <100) {Number} ErrInputInvalid <code>2</code>. Invalid input
+	 */
+
+	// ErrInputInvalid 2
+	ErrInputInvalid = New(2, "Input invalid")
 )
 
 // NewSystemError create system error

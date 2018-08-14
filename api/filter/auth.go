@@ -6,6 +6,7 @@ import (
 
 	restful "github.com/emicklei/go-restful"
 	"github.com/go-lego/engine"
+	eerr "github.com/go-lego/engine/error"
 	"github.com/go-lego/engine/log"
 )
 
@@ -45,15 +46,14 @@ func (a *Auth) retrieveAccount(req *restful.Request, must bool) error {
 }
 
 // Execute check auth
-func (a *Auth) Execute(req *restful.Request, rsp *restful.Response, chain *restful.FilterChain) {
+func (a *Auth) Execute(req *restful.Request) *eerr.Error {
 	log.Debug("Auth filter is executing ...")
 	excludes := a.Exclude()
 	uri := strings.Split(req.Request.RequestURI, "?")[0]
 	m := req.Request.Method
 	ex, ok := excludes[uri]
 	if err := a.retrieveAccount(req, !ok || (ex != "*" && ex != m)); err != nil {
-		rsp.WriteError(403, errors.New("Forbidden"))
-		return
+		return eerr.New(403, "Forbidden")
 	}
-	chain.ProcessFilter(req, rsp)
+	return nil
 }

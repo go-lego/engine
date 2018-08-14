@@ -1,0 +1,37 @@
+syntax = "proto3";
+
+package golego.engine.proto;
+
+service EventService {
+  // handle event
+  rpc OnEvent(EventRequest) returns (EventResponse) {}
+  rpc OnRollback(RollbackRequest) returns (RollbackResponse) {}
+}
+
+message Event {
+  string                  id = 1;     // event id, a.b.c.d
+  int64                   sender = 2; // sender ID
+  map<string,string>      meta = 3;   // meta info
+  map<string,string>      data = 4;   // event data
+  Event                   parent = 5; // parent event
+}
+
+message EventRequest {
+  Event      event = 1;
+}
+
+message EventResponse {
+  int64   code = 1;
+  string  message = 2;
+  repeated Event events = 3;          // raised events
+  map<string, string> results = 4;    // results
+}
+
+message RollbackRequest {
+  Event       event = 1;
+  map<string, string> results = 3;
+}
+
+message RollbackResponse {
+
+}

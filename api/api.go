@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"github.com/emicklei/go-restful"
+	"github.com/go-lego/engine/bind"
 	eerr "github.com/go-lego/engine/error"
 	"github.com/go-lego/engine/log"
 	"github.com/go-playground/form"
@@ -67,13 +68,16 @@ func Init(service web.Service, z Initializer) error {
 	restful.DefaultContainer.EnableContentEncoding(true)
 
 	log.Info("Set internal filter")
-	restful.Filter(internalFilter)
+	AddFilterExecutor(internalFilter)
 
 	log.Info("Initialize customer filters")
 	z.InitFilters()
 
 	log.Info("Initialize customer services")
 	z.InitServices()
+
+	bind.Watch()
+
 	return nil
 }
 
@@ -100,32 +104,6 @@ var (
 	MethodOptions = "OPTIONS"
 )
 
-// AddService add service to API
-func AddService(s Service) {
-	path := basePath + "/" + s.Name()
-	ws := newWebService(path)
-	for _, r := range s.Routes() {
-		log.Info("Add route %s %s%s", r.Method, path, r.Path)
-		switch r.Method {
-		case MethodGet:
-			ws.Route(ws.GET(r.Path).To(r.Handler))
-		case MethodPost:
-			ws.Route(ws.POST(r.Path).To(r.Handler))
-		case MethodPut:
-			ws.Route(ws.PUT(r.Path).To(r.Handler))
-		case MethodPatch:
-			ws.Route(ws.PATCH(r.Path).To(r.Handler))
-		case MethodDelete:
-			ws.Route(ws.DELETE(r.Path).To(r.Handler))
-		case MethodHead:
-			ws.Route(ws.HEAD(r.Path).To(r.Handler))
-			// case MethodOptions:
-			// 	ws.Route(ws.OPTIONS(r.Path).To(r.Handler))
-		}
-	}
-	restful.Add(ws)
-}
-
 // NewWebService create new go-restful web service
 func newWebService(path string) *restful.WebService {
 	ws := new(restful.WebService)
@@ -135,10 +113,10 @@ func newWebService(path string) *restful.WebService {
 	return ws
 }
 
-// AddFilter add filter to go-restful
-func AddFilter(f Filter) {
-	restful.Filter(f.Execute)
-}
+// // AddFilter add filter to go-restful
+// func AddFilter(f Filter) {
+// 	restful.Filter(f.Execute)
+// }
 
 var (
 	formDecoder   = form.NewDecoder()
@@ -147,7 +125,7 @@ var (
 
 // RequestInput get request input data as an entity.
 // Make use of form & validator to check input automatically.
-func RequestInput(req *restful.Request, e interface{}) error {
+func _requestInput(req *restful.Request, e interface{}) error {
 	values := req.Request.URL.Query()
 	req.Request.ParseForm()
 	for k, v := range req.Request.PostForm {
@@ -156,19 +134,20 @@ func RequestInput(req *restful.Request, e interface{}) error {
 	for k, v := range req.PathParameters() {
 		values[k] = []string{v}
 	}
+	// log.Debug("Request data:%s", values)
 	if err := formDecoder.Decode(e, values); err != nil {
 		return err
 	}
 	return validator.New().Struct(e)
 }
 
-// Error output error response
-func Error(rsp *restful.Response, err *eerr.Error) {
+// error output error response
+func _error(rsp *restful.Response, err *eerr.Error) {
 	rsp.WriteEntity(err)
 }
 
-// Success output success response
-func Success(rsp *restful.Response, data interface{}) {
+// success output success response
+func _success(rsp *restful.Response, data interface{}) {
 	d := map[string]interface{}{
 		"code":    0,
 		"message": "Success",
