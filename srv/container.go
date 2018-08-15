@@ -8,7 +8,9 @@ import (
 	"time"
 
 	"github.com/go-lego/engine"
+	"github.com/go-lego/engine/bind"
 	eerr "github.com/go-lego/engine/error"
+	"github.com/go-lego/engine/event"
 	"github.com/go-lego/engine/log"
 	eproto "github.com/go-lego/engine/proto"
 )
@@ -68,19 +70,31 @@ func AddServices(group string, priority int, async bool, ss ...Service) {
 	}
 }
 
+// GetFocusedEvents get focused events
+func GetFocusedEvents() []*bind.Element {
+	ret := []*bind.Element{}
+	for e, ehs := range cachedEventhandlers {
+		if len(ehs) > 0 {
+			ret = append(ret, &bind.Element{ID: e, Priority: ehs[0].Priority})
+		}
+	}
+	return ret
+}
+
 // OnEvent entrance of event request
 func (c *Container) OnEvent(ctx context.Context, req *eproto.EventRequest, rsp *eproto.EventResponse) error {
 	eid := req.Event.Id
 	ehs, ok := cachedEventhandlers[eid]
 	if !ok {
-		log.Info("Cannot find event handler:%s", eid)
+		log.Info("Cannot find event handler: %s", eid)
 		return nil
 	}
 	rsp.Results = map[string]string{}
 	ng := engine.NewEngine(NewDispatcher(rsp))
-	e := engine.NewEventFromProto(req.Event)
+	cx := ng.NewContext()
+	e := event.NewEventFromProto(req.Event)
 	params := []reflect.Value{
-		reflect.ValueOf(ng),
+		reflect.ValueOf(cx),
 		reflect.ValueOf(e),
 	}
 	//ng.StartTransaction()
@@ -114,13 +128,11 @@ func (c *Container) OnRollback(ctx context.Context, req *eproto.RollbackRequest,
 	eid := req.Event.Id
 	ehs, ok := cachedEventhandlers[eid]
 	if !ok {
-		log.Info("Cannot find event handler:%s", eid)
+		log.Info("Cannot find event handler: %s", eid)
 		return nil
 	}
-	ng := engine.NewEngine(nil)
-	e := engine.NewEventFromProto(req.Event)
+	e := event.NewEventFromProto(req.Event)
 	params := []reflect.Value{
-		reflect.ValueOf(ng),
 		reflect.ValueOf(e),
 		reflect.ValueOf(req.Results),
 	}
@@ -133,7 +145,8 @@ func (c *Container) OnRollback(ctx context.Context, req *eproto.RollbackRequest,
 		ret := eh.Rollbacker.Call(params)
 		err := ret[0].Interface()
 		if err != nil {
-			log.Error("Rollback %s failed:%s", eh.Name, err)
+			log.Error("Rollback %s failed: %s", eh.Name, err)
+			log.Error("Results: %s", req.Results)
 		}
 	}
 	// ng.EndTransaction()

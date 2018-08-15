@@ -2,6 +2,8 @@ package engine
 
 import (
 	eerr "github.com/go-lego/engine/error"
+	"github.com/go-lego/engine/event"
+	"github.com/go-lego/engine/tx"
 )
 
 // Account interface
@@ -12,19 +14,27 @@ type Account interface {
 // Engine struct,
 // Hold dispatcher and transaction
 type Engine struct {
-	dispatcher  Dispatcher
-	transaction Transaction
+	dispatcher  event.Dispatcher
+	transaction tx.Transaction
 }
 
 // NewEngine create new engine instance by specifying dispatcher
-func NewEngine(d Dispatcher) *Engine {
+func NewEngine(d event.Dispatcher) *Engine {
 	return &Engine{
 		dispatcher: d,
 	}
 }
 
+// NewContext create new context for the engine
+func (e *Engine) NewContext() *Context {
+	return &Context{
+		engine: e,
+		values: map[string]interface{}{},
+	}
+}
+
 // RaiseEvent raise new event
-func (e *Engine) RaiseEvent(ent *Event) {
+func (e *Engine) RaiseEvent(ent *event.Event) {
 	e.dispatcher.Dispatch(ent)
 }
 
@@ -54,8 +64,8 @@ func (e *Engine) HasError() bool {
 }
 
 // Error get error by index
-func (e *Engine) Error() *eerr.Error {
-	return e.dispatcher.Error()
+func (e *Engine) Error(index int) *eerr.Error {
+	return e.dispatcher.Error(index)
 }
 
 // StartTransaction start engine transaction

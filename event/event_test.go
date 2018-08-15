@@ -1,9 +1,9 @@
-package eds
+package event
 
 import (
 	"testing"
 
-	eproto "github.com/go-lego/engine/eds/proto"
+	eproto "github.com/go-lego/engine/proto"
 )
 
 func TestNewEvent(t *testing.T) {
@@ -102,5 +102,15 @@ func TestSetDataAndGetData(t *testing.T) {
 	}
 	if o.Name != "tt" || o.Age != 100 {
 		t.Fatal("GetDataAsObject incorrect:", o)
+	}
+}
+
+func TestEventGetParent(t *testing.T) {
+	e := NewEvent("test", 0, nil)
+	if e.Parent != nil {
+		t.Fatal("e.Parent should be nil")
+	}
+	if e.GetParent() != nil {
+		t.Fatal("e.GetParent() should be nil")
 	}
 }

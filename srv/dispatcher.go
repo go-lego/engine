@@ -1,8 +1,8 @@
 package srv
 
 import (
-	"github.com/go-lego/engine"
 	eerr "github.com/go-lego/engine/error"
+	"github.com/go-lego/engine/event"
 	eproto "github.com/go-lego/engine/proto"
 )
 
@@ -19,7 +19,7 @@ func NewDispatcher(rsp *eproto.EventResponse) *Dispatcher {
 }
 
 // Dispatch event
-func (d *Dispatcher) Dispatch(ent *engine.Event) {
+func (d *Dispatcher) Dispatch(ent *event.Event) {
 	d.response.Events = append(d.response.Events, ent.Event)
 }
 
@@ -50,6 +50,6 @@ func (d *Dispatcher) HasError() bool {
 }
 
 // Error get single error by index
-func (d *Dispatcher) Error() *eerr.Error {
+func (d *Dispatcher) Error(idex int) *eerr.Error {
 	return eerr.New(d.response.Code, d.response.Message)
 }

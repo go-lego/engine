@@ -6,15 +6,6 @@ type Context struct {
 	values map[string]interface{}
 }
 
-// NewContext new engine context
-func NewContext(e *Engine) *Context {
-	c := &Context{
-		engine: e,
-		values: map[string]interface{}{},
-	}
-	return c
-}
-
 // Engine get engine
 func (c *Context) Engine() *Engine {
 	return c.engine

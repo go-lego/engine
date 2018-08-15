@@ -1,4 +1,4 @@
-package engine
+package tx
 
 // Transaction interface
 type Transaction interface {

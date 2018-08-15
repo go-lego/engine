@@ -1,6 +1,7 @@
 package bind
 
 // LocalRegistry local registry
+// Use local registry to set event binding mannually for developing purpose (not recommended)
 type LocalRegistry struct {
 	data map[string][]*Element
 }

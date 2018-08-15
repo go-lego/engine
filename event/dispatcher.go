@@ -1,4 +1,4 @@
-package engine
+package event
 
 import (
 	eerr "github.com/go-lego/engine/error"
@@ -25,5 +25,5 @@ type Dispatcher interface {
 	HasError() bool
 
 	// Error get single error by index
-	Error() *eerr.Error
+	Error(index int) *eerr.Error
 }

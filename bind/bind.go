@@ -36,6 +36,7 @@ type Element struct {
 
 // Watch service booting to update bindings (for API)
 func Watch() {
+	log.Debug("Watching event bindings ...")
 	buildBindings()
 	go func() {
 		for {
@@ -55,6 +56,7 @@ func Watch() {
 			} else {
 				break
 			}
+			log.Debug("Broker failed, will retry in 10 seconds")
 			time.Sleep(10 * time.Second)
 		}
 	}()
@@ -62,7 +64,12 @@ func Watch() {
 
 // Report bindings (for SRV)
 func Report(ns string, data []*Element) {
-
+	log.Debug("Reporting service event binding ...")
+	registry.Add(ns, data)
+	log.Debug("Notifying API server with srv namespace: %s", ns)
+	if err := broker.Publish(Topic, &broker.Message{Body: []byte(ns)}); err != nil {
+		log.Error("Failed to publish srv namespace:%s", err)
+	}
 }
 
 // Registry binding registry
@@ -71,23 +78,30 @@ type Registry interface {
 	// srv-name => [e1, e2, ...]
 	GetAll() map[string][]*Element
 
-	Add(name string, els []*Element)
+	Add(ns string, els []*Element)
 }
 
 var (
-	bindElements    = map[string][]*Element{}
-	DefaultRegistry = NewLocalRegistry()
+
+	// DefaultRegistry registry
+	registry Registry = NewConsulRegistry("127.0.0.1:8500", "event/binding/") // NewLocalRegistry()
 
 	lock = new(sync.Mutex)
 )
 
+// SetRegistry set registry
+func SetRegistry(r Registry) {
+	registry = r
+}
+
 func buildBindings() {
 	dummy := map[string][]*Handler{}
-	raw := DefaultRegistry.GetAll()
+	raw := registry.GetAll()
 	for ns, els := range raw {
 		s, ok := services[ns]
 		if !ok {
 			s = eproto.NewEventService(ns, client.DefaultClient)
+			log.Debug("Add event service: %s", ns)
 			services[ns] = s
 		}
 		for _, el := range els {

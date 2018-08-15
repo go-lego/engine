@@ -10,6 +10,8 @@ import (
 // Service interface.
 // To handle event abc.def.ghi, need method OnDefGhi.
 // To rollback event abc.def.ghi, need method RollbackDefGhi.
+// Event function: func(ctx *engine.Context, e *event.Event) error {}
+// Rollback function: func(e *event.Event, results map[string]string) {}
 type Service interface {
 	ID() string
 }

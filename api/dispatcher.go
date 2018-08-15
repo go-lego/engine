@@ -3,40 +3,41 @@ package api
 import (
 	"context"
 
-	"github.com/go-lego/engine"
 	"github.com/go-lego/engine/bind"
 	eerr "github.com/go-lego/engine/error"
+	"github.com/go-lego/engine/event"
 	"github.com/go-lego/engine/log"
 	eproto "github.com/go-lego/engine/proto"
 )
 
 // Dispatcher for API
 type Dispatcher struct {
-	events    []*engine.Event
+	events    []*event.Event
 	results   map[string]string
 	running   bool
 	histories []*dispatchHistory
-	erro      *eerr.Error
+	errors    []*eerr.Error
 	mapping   map[string][]*bind.Handler
 }
 
 type dispatchHistory struct {
 	h *bind.Handler     // handler
-	e *engine.Event     // event
+	e *event.Event      // event
 	r map[string]string // result
 }
 
 // NewDispatcher create new dispatcher
 func NewDispatcher() *Dispatcher {
 	return &Dispatcher{
-		events:  []*engine.Event{},
+		events:  []*event.Event{},
 		results: map[string]string{},
 		running: false,
 		mapping: bind.GetMapping(),
+		errors:  []*eerr.Error{},
 	}
 }
 
-func (d *Dispatcher) handleEvent(e *engine.Event) *eerr.Error {
+func (d *Dispatcher) handleEvent(e *event.Event) *eerr.Error {
 	mapping := d.mapping
 	handlers, ok := mapping[e.Id]
 	if !ok {
@@ -70,7 +71,7 @@ func (d *Dispatcher) handleEvent(e *engine.Event) *eerr.Error {
 		}
 		// dispatch raised events
 		for _, t := range rsp.Events {
-			d.Dispatch(engine.NewEventFromProto(t))
+			d.Dispatch(event.NewEventFromProto(t))
 		}
 		log.Debug("Handler(%s) handle event completed: %s", h.ID, e.Id)
 	}
@@ -93,7 +94,7 @@ func (d *Dispatcher) rollback() {
 }
 
 // Dispatch event
-func (d *Dispatcher) Dispatch(e *engine.Event) {
+func (d *Dispatcher) Dispatch(e *event.Event) {
 	log.Debug("Dispatching event (%s) ...", e.Id)
 	log.Debug("%s", e)
 	d.events = append(d.events, e)
@@ -101,7 +102,7 @@ func (d *Dispatcher) Dispatch(e *engine.Event) {
 		d.running = true
 		for i := 0; i < len(d.events); i++ {
 			if err := d.handleEvent(d.events[i]); err != nil {
-				d.erro = err
+				d.AddError(err)
 				d.rollback()
 				return
 			}
@@ -131,15 +132,15 @@ func (d *Dispatcher) Results() map[string]string {
 
 // AddError add error
 func (d *Dispatcher) AddError(e *eerr.Error) {
-	d.erro = e
+	d.errors = append(d.errors, e)
 }
 
 // HasError check if got an error
 func (d *Dispatcher) HasError() bool {
-	return d.erro != nil
+	return len(d.errors) > 0
 }
 
 // Error get single error by index
-func (d *Dispatcher) Error() *eerr.Error {
-	return d.erro
+func (d *Dispatcher) Error(index int) *eerr.Error {
+	return d.errors[index]
 }

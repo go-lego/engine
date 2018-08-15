@@ -1,4 +1,4 @@
-package engine
+package event
 
 import (
 	"encoding/json"

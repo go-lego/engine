@@ -14,7 +14,8 @@ type RouteHandler func(ctx *engine.Context, input interface{}) (interface{}, *ee
 // routeFunctionWrapper wrapper of restful.RouteFunction.
 func routeFunctionWrapper(rh RouteHandler, input interface{}) restful.RouteFunction {
 	return func(req *restful.Request, rsp *restful.Response) {
-		ctx := engine.NewContext(engine.NewEngine(NewDispatcher()))
+		ng := engine.NewEngine(NewDispatcher())
+		ctx := ng.NewContext()
 		var cpy interface{}
 		if input != nil {
 			cpy = deepcopy.Copy(input)
